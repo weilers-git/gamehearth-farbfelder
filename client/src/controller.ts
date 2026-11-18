@@ -1,6 +1,6 @@
 import type { GameConnection } from "@gamehearth/sdk/client";
 import type { Direction, FarbfelderAction, FarbfelderState } from "../../src/index";
-import { blob, blobKeys, controllerView, cssColor, keyDirections, padDirection, steer, type Snapshot } from "./view";
+import { blob, blobKeys, controllerView, cssColor, keyDirections, needsResend, padDirection, pressKey, releaseKey, steer, topKey, type Snapshot } from "./view";
 
 const pad: { dir: Exclude<Direction, "none">; label: string; symbol: string }[] = [
   { dir: "up", label: "Hoch", symbol: "▲" },
@@ -25,7 +25,8 @@ export function mountController(root: HTMLElement, game: GameConnection<Farbfeld
   facts.append(swatch, colorName, cells);
   header.append(title, facts);
   const status = element("p", "status");
-  status.setAttribute("aria-live", "polite");
+  const notice = element("p", "sr-only");
+  notice.setAttribute("aria-live", "polite");
 
   const grid = element("div", "pad");
   grid.setAttribute("role", "group");
@@ -36,11 +37,21 @@ export function mountController(root: HTMLElement, game: GameConnection<Farbfeld
   blobButton.append(blobLabel);
   const area = element("div", "pad-area");
   area.append(grid);
-  root.append(header, status, area, blobButton);
+  root.append(header, status, notice, area, blobButton);
 
   let held: Direction = "none";
   let padPointer: number | undefined;
   let canBlob = false;
+  let keys: Direction[] = [];
+  let pending = 0;
+
+  const transmit = (dir: Direction) => {
+    pending += 1;
+    const done = () => {
+      pending -= 1;
+    };
+    game.move(steer(dir)).then(done, done);
+  };
 
   const send = (dir: Direction) => {
     if (dir === held) {
@@ -50,7 +61,7 @@ export function mountController(root: HTMLElement, game: GameConnection<Farbfeld
     for (const button of grid.querySelectorAll("button")) {
       button.setAttribute("aria-pressed", String(button.dataset["dir"] === dir));
     }
-    void game.move(steer(dir));
+    transmit(dir);
   };
 
   const splash = () => {
@@ -71,13 +82,13 @@ export function mountController(root: HTMLElement, game: GameConnection<Farbfeld
     button.setAttribute("aria-label", entry.label);
     button.setAttribute("aria-pressed", "false");
     button.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
+      if (event.key === "Enter") {
         event.preventDefault();
         send(entry.dir);
       }
     });
     button.addEventListener("keyup", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
+      if (event.key === "Enter") {
         event.preventDefault();
         send("none");
       }
@@ -133,6 +144,7 @@ export function mountController(root: HTMLElement, game: GameConnection<Farbfeld
     const dir = keyDirections[event.key];
     if (dir !== undefined) {
       event.preventDefault();
+      keys = pressKey(keys, dir);
       send(dir);
     } else if (blobKeys.includes(event.key)) {
       event.preventDefault();
@@ -140,14 +152,24 @@ export function mountController(root: HTMLElement, game: GameConnection<Farbfeld
     }
   });
   addEventListener("keyup", (event) => {
-    if (keyDirections[event.key] === held) {
-      send("none");
+    const dir = keyDirections[event.key];
+    if (dir === undefined) {
+      return;
+    }
+    const before = topKey(keys);
+    keys = releaseKey(keys, dir);
+    if (before === held) {
+      send(topKey(keys));
     }
   });
-  addEventListener("blur", () => send("none"));
+  const letGo = () => {
+    keys = [];
+    send("none");
+  };
+  addEventListener("blur", letGo);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
-      send("none");
+      letGo();
     }
   });
   addEventListener("contextmenu", (event) => event.preventDefault());
@@ -160,6 +182,9 @@ export function mountController(root: HTMLElement, game: GameConnection<Farbfeld
     colorName.textContent = shown.colorName;
     cells.textContent = shown.cells;
     status.textContent = shown.status;
+    if (notice.textContent !== shown.announcement) {
+      notice.textContent = shown.announcement;
+    }
     document.body.classList.toggle("over", shown.over);
     canBlob = shown.canBlob;
     blobButton.disabled = !shown.canBlob;
@@ -167,5 +192,8 @@ export function mountController(root: HTMLElement, game: GameConnection<Farbfeld
     blobButton.style.setProperty("--progress", `${Math.round(shown.blob.progress * 100)}%`);
     blobLabel.textContent = shown.blob.label;
     blobButton.setAttribute("aria-label", shown.blob.label);
+    if (needsResend(snapshot as Snapshot, held, pending)) {
+      transmit(held);
+    }
   });
 }

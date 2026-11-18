@@ -11,7 +11,12 @@ import {
   hurry,
   listNames,
   markColor,
+  needsResend,
   padDirection,
+  pressKey,
+  releaseKey,
+  steer,
+  topKey,
   place,
   ranking,
   resultLine,
@@ -158,6 +163,32 @@ describe("Oberfläche von Farbfelder: Handy", () => {
       canBlob: false,
       blob: { ready: false, label: "Runde vorbei" },
     });
+  });
+
+  it("liest nur das Ergebnis vor, nicht die jede Sekunde neue Restzeit", () => {
+    expect(controllerView(snapshot(), players).announcement).toBe("");
+    expect(controllerView(snapshot({ public: view({ ticksLeft: 1780 }) }), players).announcement).toBe("");
+    expect(controllerView(snapshot({ result: { winners: ["p1"] }, moves: [] }), players).announcement).toBe("Du gewinnst!");
+  });
+
+  it("kehrt beim Loslassen einer Taste zur noch gehaltenen zurück", () => {
+    let keys = pressKey([], "left");
+    keys = pressKey(keys, "up");
+    expect(topKey(keys)).toBe("up");
+    keys = releaseKey(keys, "up");
+    expect(topKey(keys)).toBe("left");
+    expect(topKey(releaseKey(keys, "left"))).toBe("none");
+  });
+
+  it("schickt die gehaltene Richtung erneut, wenn sie auf dem Server verloren ging und nichts mehr unterwegs ist", () => {
+    const moves: FarbfelderAction[] = [...(["up", "down", "left", "right", "none"] as const).map((dir) => steer(dir)), { type: "blob" }];
+    const lost = snapshot({ moves });
+    expect(needsResend(lost, "right", 0)).toBe(true);
+    expect(needsResend(lost, "right", 1)).toBe(false);
+    const arrived = snapshot({ moves, public: view({ figures: { p1: figure(2, 2, { dir: "right" }), p2: figure(10, 5), p3: figure(20, 8) } }) });
+    expect(needsResend(arrived, "right", 0)).toBe(false);
+    expect(needsResend({ ...lost, result: { winners: ["p1"] } }, "right", 0)).toBe(false);
+    expect(needsResend({ ...lost, moves: [] }, "right", 0)).toBe(false);
   });
 
   it("macht aus der Fingerposition auf dem Steuerkreuz eine Richtung", () => {

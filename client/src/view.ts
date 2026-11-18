@@ -183,6 +183,7 @@ export interface ControllerView {
   blob: BlobStatus;
   canBlob: boolean;
   over: boolean;
+  announcement: string;
 }
 
 export function controllerView(snapshot: Snapshot, players: Record<string, PlayerInfo>): ControllerView {
@@ -193,15 +194,17 @@ export function controllerView(snapshot: Snapshot, players: Record<string, Playe
   const own = seatColor(seat, seats);
   const figure = view.figures[seat];
   const canBlob = snapshot.moves.some((move) => move.type === "blob");
+  const status = controllerStatus(snapshot, players);
   return {
     name: nameOf(seat, players),
     color: own.color,
     colorName: own.name,
     cells: cellsLabel(counts[seats.indexOf(seat)] ?? 0),
-    status: controllerStatus(snapshot, players),
+    status,
     blob: snapshot.result === undefined ? blobStatus(figure?.blobWait ?? 0) : { ready: false, label: "Runde vorbei", progress: 0 },
     canBlob,
     over: snapshot.result !== undefined,
+    announcement: snapshot.result === undefined ? "" : status,
   };
 }
 
@@ -252,4 +255,25 @@ export function steer(dir: Direction): FarbfelderAction {
 
 export function blob(): FarbfelderAction {
   return { type: "blob" };
+}
+
+export function pressKey(keys: readonly Direction[], dir: Direction): Direction[] {
+  return [...keys.filter((key) => key !== dir), dir];
+}
+
+export function releaseKey(keys: readonly Direction[], dir: Direction): Direction[] {
+  return keys.filter((key) => key !== dir);
+}
+
+export function topKey(keys: readonly Direction[]): Direction {
+  return keys.at(-1) ?? "none";
+}
+
+export function needsResend(snapshot: Snapshot, held: Direction, pending: number): boolean {
+  return (
+    pending === 0 &&
+    snapshot.result === undefined &&
+    snapshot.public.figures[snapshot.player]?.dir !== held &&
+    snapshot.moves.some((move) => move.type === "steer" && move.dir === held)
+  );
 }
