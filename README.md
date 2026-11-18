@@ -4,6 +4,8 @@ Ein Partyspiel für [Gamehearth](https://github.com/weilers-git/gamehearth), die
 
 Farbfelder ist das zweite eigene Spiel von Gamehearth und das Beispiel für Echtzeit mit Fernseher und Handys als Controller. Es entstand aus der Vorlage `echtzeit` des Gamehearth-Werkzeugs, gebaut von einem KI-Agenten nach einer Beschreibung in Alltagssprache.
 
+Auf einen Gamehearth-Server kommt das Spiel über einen Katalog, etwa den [Gamehearth-Katalog](https://github.com/weilers-git/gamehearth-catalog): In der Verwaltung den Katalog hinzufügen und Farbfelder installieren. Zum Spielen öffnet ein Fernseher oder Laptop die Adresse des Servers mit `/tv` und wird in der Lobby per Code gekoppelt; die Handys treten dem Raum wie gewohnt bei.
+
 ## Regeln
 
 Für 2 bis 8 Spieler. Eine Runde dauert 90 Sekunden.
