@@ -1,6 +1,6 @@
 # Farbfelder
 
-Ein Partyspiel für [Gamehearth](https://github.com/weilers-git/gamehearth), die selbst gehostete Spieleplattform. Der Fernseher zeigt das Spielfeld, jeder steuert seine Figur mit dem Handy.
+Ein Partyspiel für Gamehearth, die selbst gehostete Spieleplattform. Der Fernseher zeigt das Spielfeld, jeder steuert seine Figur mit dem Handy.
 
 Farbfelder ist das zweite eigene Spiel von Gamehearth und das Beispiel für Echtzeit mit Fernseher und Handys als Controller. Es entstand aus der Vorlage `echtzeit` des Gamehearth-Werkzeugs, gebaut von einem KI-Agenten nach einer Beschreibung in Alltagssprache.
 
