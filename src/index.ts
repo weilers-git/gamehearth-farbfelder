@@ -1,0 +1,20 @@
+export {
+  blobCells,
+  blobCooldownTicks,
+  blobRadius,
+  cellIndex,
+  cellOf,
+  countCells,
+  directions,
+  emptyCell,
+  farbfelder as default,
+  farbfelder,
+  gridHeight,
+  gridWidth,
+  insideGrid,
+  ownerMark,
+  roundTicks,
+  startCell,
+  stepsPerCell,
+} from "./game";
+export type { Direction, FarbfelderAction, FarbfelderState, Figure, Point, Public } from "./game";

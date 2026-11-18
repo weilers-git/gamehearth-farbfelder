@@ -1,0 +1,218 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #141c28;
+  color: #f3f0ea;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  --seat: #f5c542;
+}
+
+#field,
+#controller {
+  display: none;
+}
+
+body.screen #field {
+  display: block;
+  position: fixed;
+  inset: 0;
+}
+
+#field canvas {
+  display: block;
+}
+
+body.controller #controller {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+
+#controller .who {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#controller h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+  color: var(--seat);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#controller .facts {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+}
+
+#controller .swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--seat);
+  flex: none;
+}
+
+#controller .cells {
+  margin-left: auto;
+  font-size: 20px;
+}
+
+#controller .status {
+  margin: 0;
+  min-height: 2.5em;
+  font-size: 16px;
+  color: #c9d2df;
+}
+
+body.over #controller .status {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--seat);
+}
+
+.pad-area {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+
+.pad {
+  width: min(100cqw, 100cqh, 420px);
+  height: min(100cqw, 100cqh, 420px);
+  display: grid;
+  grid-template-areas:
+    ". up ."
+    "left . right"
+    ". down .";
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 8px;
+  touch-action: none;
+}
+
+.pad button {
+  border: none;
+  border-radius: 16px;
+  background: var(--seat);
+  color: #141c28;
+  font: 700 26px system-ui, sans-serif;
+  touch-action: none;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pad .up {
+  grid-area: up;
+}
+
+.pad .left {
+  grid-area: left;
+}
+
+.pad .right {
+  grid-area: right;
+}
+
+.pad .down {
+  grid-area: down;
+}
+
+.pad button[aria-pressed="true"] {
+  filter: brightness(0.7);
+}
+
+.pad button:focus-visible,
+.blob:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.blob {
+  flex: none;
+  height: clamp(64px, 18vh, 120px);
+  border: 3px solid var(--seat);
+  border-radius: 20px;
+  background: linear-gradient(to right, color-mix(in srgb, var(--seat) 45%, #141c28) var(--progress, 0%), #1f2a3a var(--progress, 0%));
+  color: #f3f0ea;
+  font: 700 24px system-ui, sans-serif;
+  touch-action: none;
+}
+
+.blob.ready {
+  background: var(--seat);
+  color: #141c28;
+}
+
+.blob:disabled {
+  opacity: 1;
+}
+
+@media (orientation: landscape) {
+  body.controller #controller {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "who status"
+      "pad blob";
+    column-gap: 16px;
+  }
+
+  #controller .who {
+    grid-area: who;
+  }
+
+  #controller .status {
+    grid-area: status;
+    min-height: 0;
+    align-self: center;
+  }
+
+  .pad-area {
+    grid-area: pad;
+    min-height: 0;
+  }
+
+  .blob {
+    grid-area: blob;
+    height: auto;
+    min-height: 0;
+  }
+}
+
+#fallback {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+#fallback[hidden] {
+  display: none;
+}
