@@ -18,5 +18,6 @@ export {
   startCell,
   stepsPerCell,
   ticksPerSecond,
+  winnersOf,
 } from "./game";
-export type { Direction, FarbfelderAction, FarbfelderState, FieldSize, Figure, Options, Point, Public, Size } from "./game";
+export type { Direction, FarbfelderAction, FarbfelderState, FieldSize, Figure, Ids, Options, Point, Public, Size } from "./game";

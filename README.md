@@ -15,6 +15,7 @@ Für 2 bis 8 Spieler. Eine Runde dauert 90 Sekunden (einstellbar, siehe „Optio
 - Jedes Kästchen, über das die Figur läuft, bekommt ihre Farbe, auch wenn es vorher jemand anderem gehörte.
 - Am Handy gibt es außerdem den Knopf **Klecks**: Er färbt auf einen Schlag die 3 × 3 Kästchen rund um die Figur. Danach muss man 8 Sekunden warten, bis man wieder klecksen kann. Das Handy zeigt, wie lange es noch dauert.
 - Ist die Zeit um, gewinnt, wer die meisten Kästchen hat. Bei Gleichstand gewinnen alle mit den meisten.
+- Wer gewinnt, bekommt im Profil einen Sieg (`siege`). Die Spielseite der Plattform zeigt dazu eine Bestenliste.
 - Auf dem Fernseher sieht man das Feld mit allen Figuren und ihren Namen, die Restzeit und rechts eine Rangliste, wie viele Kästchen jeder hat.
 - Auf dem Handy sieht man seinen Namen, seine Farbe, wie viele Kästchen man hat, das Steuerkreuz und den Klecks-Knopf.
 - Es gibt keinen Ton.
@@ -61,7 +62,7 @@ Dieses Spiel lässt sich gut mit einem KI-Agenten (Claude Code, Cursor, Copilot 
 | `npm run dev` | startet das Spiel lokal mit Fernseher und allen Handys im Browser |
 | `npm test` | Tests |
 | `npm run typecheck` | Typprüfung |
-| `npm run check` | prüft das Spiel wie die Plattform, mit Bot-Partien Tick für Tick |
+| `npm run check` | prüft das Spiel wie die Plattform, mit Bot-Partien Tick für Tick; trägt neue Profil-IDs in `ids.lock` ein (gehört ins Repo) |
 | `npm run pack` | baut das Spielpaket für einen Katalog |
 
 ## Lizenz

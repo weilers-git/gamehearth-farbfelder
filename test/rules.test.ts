@@ -1,5 +1,6 @@
-import { createMatch, stepMatch, tickMs, type Match } from "@gamehearth/sdk/platform";
+import { createMatch, stepMatch, tickMs, type Match, type ProfileChange } from "@gamehearth/sdk/platform";
 import { describe, expect, it } from "vitest";
+import manifest from "../manifest.json";
 import farbfelder, {
   blobCooldownTicks,
   cellIndex,
@@ -21,8 +22,10 @@ import farbfelder, {
 type FarbMatch = Match<FarbfelderState, FarbfelderAction>;
 type Input = { player: string; action: FarbfelderAction };
 
+const catalog = manifest;
+
 function start(players = 2, seed = "farbfelder", options: Options = { spielzeit: 90, feld: "mittel" }): FarbMatch {
-  const created = createMatch(farbfelder, { playerCount: players, seed, options });
+  const created = createMatch(farbfelder, { playerCount: players, seed, options, catalog });
   if (!created.ok) {
     throw new Error(created.error.message);
   }
@@ -30,9 +33,14 @@ function start(players = 2, seed = "farbfelder", options: Options = { spielzeit:
 }
 
 function step(match: FarbMatch, inputs: Input[] = [], times = 1): FarbMatch {
+  return stepWithChanges(match, inputs, times).match;
+}
+
+function stepWithChanges(match: FarbMatch, inputs: Input[] = [], times = 1): { match: FarbMatch; changes: ProfileChange[] } {
   let current = match;
+  const changes: ProfileChange[] = [];
   for (let i = 0; i < times; i++) {
-    const outcome = stepMatch(farbfelder, current, { inputs: i === 0 ? inputs : [], now: 0, dt: tickMs });
+    const outcome = stepMatch(farbfelder, current, { inputs: i === 0 ? inputs : [], now: 0, dt: tickMs }, { catalog });
     if (!outcome.ok) {
       throw new Error(outcome.error.message);
     }
@@ -41,9 +49,10 @@ function step(match: FarbMatch, inputs: Input[] = [], times = 1): FarbMatch {
         throw new Error(`Eingabe abgelehnt: ${result.code}`);
       }
     }
+    changes.push(...(outcome.changes ?? []));
     current = outcome.match;
   }
-  return current;
+  return { match: current, changes };
 }
 
 function steer(player: string, dir: Direction): Input {
@@ -317,8 +326,18 @@ describe("Farbfelder: Ende", () => {
       state.public.ticksLeft = 1;
       state.public.grid = "1".repeat(10) + "2".repeat(12) + "3".repeat(11) + emptyCell.repeat(gridWidth * gridHeight - 33);
     });
-    match = step(match);
-    expect(match.result).toEqual({ winners: ["p2"] });
+    const last = stepWithChanges(match);
+    expect(last.match.result).toEqual({ winners: ["p2"] });
+    expect(last.changes).toEqual([{ player: "p2", op: "stat", id: "siege", value: 1 }]);
+  });
+
+  it("vergibt Siege nur im letzten Tick", () => {
+    const run = stepWithChanges(start(2), [], roundTicks - 1);
+    expect(run.match.result).toBeUndefined();
+    expect(run.changes).toEqual([]);
+    const last = stepWithChanges(run.match);
+    expect(last.match.result).toBeDefined();
+    expect(last.changes.map((change) => change.player)).toEqual(last.match.result?.winners);
   });
 
   it("lässt bei Gleichstand alle mit den meisten Kästchen gewinnen", () => {
@@ -326,8 +345,12 @@ describe("Farbfelder: Ende", () => {
       state.public.ticksLeft = 1;
       state.public.grid = "1".repeat(7) + "2".repeat(3) + "3".repeat(7) + "4".repeat(5) + emptyCell.repeat(gridWidth * gridHeight - 22);
     });
-    match = step(match);
-    expect(match.result).toEqual({ winners: ["p1", "p3"] });
+    const last = stepWithChanges(match);
+    expect(last.match.result).toEqual({ winners: ["p1", "p3"] });
+    expect(last.changes).toEqual([
+      { player: "p1", op: "stat", id: "siege", value: 1 },
+      { player: "p3", op: "stat", id: "siege", value: 1 },
+    ]);
   });
 
   it("zählt die Kästchen pro Spieler", () => {

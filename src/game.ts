@@ -1,4 +1,5 @@
-import { defineGame, type GameState, type PlayerId } from "@gamehearth/sdk";
+import { defineGame, type CatalogOf, type GameState, type PlayerId } from "@gamehearth/sdk";
+import manifest from "../manifest.json";
 
 export const fieldSizes = {
   klein: { width: 24, height: 14 },
@@ -54,6 +55,8 @@ export interface Options {
 export type FarbfelderState = GameState<Public, Record<string, never>, Record<string, never>>;
 
 export type FarbfelderAction = { type: "steer"; dir: Direction } | { type: "blob" };
+
+export type Ids = CatalogOf<typeof manifest>;
 
 const steps: Record<Direction, Point> = {
   up: { x: 0, y: -1 },
@@ -133,7 +136,7 @@ function aligned(figure: Figure): boolean {
   return figure.x % stepsPerCell === 0 && figure.y % stepsPerCell === 0;
 }
 
-export const farbfelder = defineGame<FarbfelderState, FarbfelderAction, Options>({
+export const farbfelder = defineGame<FarbfelderState, FarbfelderAction, Options, Ids>({
   setup({ players, options }) {
     const size = fieldSizes[options.feld];
     const figures: Record<PlayerId, Figure> = {};
@@ -197,7 +200,7 @@ export const farbfelder = defineGame<FarbfelderState, FarbfelderAction, Options>
     figure.blobY = center.y;
   },
 
-  tick(state, _dt, { players, random }) {
+  tick(state, _dt, { players, random, profile }) {
     const view = state.public;
     const painters: Record<number, string[]> = {};
     players.forEach((player, index) => {
@@ -234,15 +237,25 @@ export const farbfelder = defineGame<FarbfelderState, FarbfelderAction, Options>
     }
     view.grid = paint(view.grid, cells);
     view.ticksLeft -= 1;
+    if (view.ticksLeft === 0) {
+      for (const winner of winnersOf(state) ?? []) {
+        profile.stat(winner, "siege", 1);
+      }
+    }
   },
 
   result(state) {
-    if (state.public.ticksLeft > 0) {
-      return undefined;
-    }
-    const seats = Object.keys(state.public.figures);
-    const counts = countCells(state.public.grid, seats.length);
-    const best = Math.max(...counts);
-    return { winners: seats.filter((_, index) => counts[index] === best) };
+    const winners = winnersOf(state);
+    return winners === undefined ? undefined : { winners };
   },
 });
+
+export function winnersOf(state: FarbfelderState): PlayerId[] | undefined {
+  if (state.public.ticksLeft > 0) {
+    return undefined;
+  }
+  const seats = Object.keys(state.public.figures);
+  const counts = countCells(state.public.grid, seats.length);
+  const best = Math.max(...counts);
+  return seats.filter((_, index) => counts[index] === best);
+}

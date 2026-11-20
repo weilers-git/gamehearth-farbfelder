@@ -16,7 +16,8 @@ Die Person kann vermutlich nicht programmieren. Sie kennt ihr Spiel, nicht den C
 
 | Pfad | Inhalt |
 |---|---|
-| `manifest.json` | Name, Version, Spielerzahl, Rollen (Fernseher und Controller), Lizenz und Optionen des Spiels |
+| `manifest.json` | Name, Version, Spielerzahl, Rollen (Fernseher und Controller), Lizenz, Optionen und Profil-Katalog (`stats`) des Spiels |
+| `ids.lock` | alle IDs des Profils, die das Spiel je hatte; pflegt `npm run check`, gehört ins Repo |
 | `src/game.ts` | die Spielregeln (Reducer mit `tick`), laufen auf dem Server |
 | `src/index.ts` | exportiert das Spiel als `default` |
 | `client/src/main.ts` | verbindet die Oberfläche mit der Plattform und startet je nach Rolle Fernseher oder Controller |
@@ -103,6 +104,22 @@ Varianten, die man vor der Partie einstellt, stehen in `manifest.json` unter `op
 - `check` spielt jeden Wert jeder Option. Funde nennen die Optionen, der Befehl zum Nachspielen setzt sie mit `--option spielzeit=30`.
 - Tests geben `createMatch` die Optionen mit (`options: { spielzeit: 60 }`, siehe `test/rules.test.ts`); ohne sie ist `ctx.options` leer.
 - Eine Option fragt man nur, wenn die Person die Variante wirklich will. Braucht ein Spiel keine, fliegt `options` aus dem Manifest und `Options` aus den Regeln.
+
+### Profile
+
+Was über eine Partie hinaus bleiben soll, steht im **Profil** des Spielers: gesammelte Gegenstände, Siege, Bestwerte, Freischaltungen. Die Plattform hält pro Account und Spiel ein Profil; das Spiel hat keine eigene Datenbank. In Farbfelder bekommen im letzten Tick alle mit den meisten Kästchen einen Sieg (`siege`, mit Bestenliste). Frag die Person, ob etwas über eine Partie hinaus bleiben soll; wenn nicht, braucht das Spiel kein Profil.
+
+- **Katalog im Manifest.** Jede ID steht mit Anzeigenamen in `manifest.json`: `items` (Anzahl, etwa Joker oder Münzen), `stats` (Zahlen; mit `"better": "higher"` oder `"lower"` bekommt der Stat eine Bestenliste auf der Spielseite der Plattform, ohne `better` ist er ein Zähler) und `flags` (`true` oder ein kurzer Text, etwa für Freischaltungen). Namen aus Kleinbuchstaben, Ziffern und `-`.
+- **IDs sind für immer.** `npm run check` trägt jede ID in `ids.lock` ein; die Datei gehört ins Repo. Eine veröffentlichte ID nie umbenennen oder löschen, sondern mit `"deprecated": true` stehen lassen, sonst verlieren alle Spieler, was sie gesammelt haben. Nur IDs, die nie veröffentlicht wurden (etwa die des Beispiels), darfst du von Hand aus `ids.lock` löschen.
+- **Lesen:** `ctx.profiles[sitz]` in `setup`, `legalMoves`, `apply` und `tick`, etwa `ctx.profiles[player]?.items.joker ?? 0`. Leere Einträge fehlen.
+- **`legalMoves` bietet nur an, was das Profil hergibt.** Ein Zug, der einen Joker verbraucht, steht nur in der Liste, wenn einer da ist. `check` meldet es als Fehler, wenn das fehlt.
+- **Schreiben:** `ctx.profile.add(sitz, item, n)`, `stat(sitz, name, n)` (Zähler ändern, auch für Siege), `record(sitz, name, wert)` (Bestwert: die Plattform behält den besseren, nur für Stats mit `better`) und `flag(sitz, name, wert)` (`false` löscht) in `apply` und `tick`; `use(sitz, item, n)` (verbrauchen) nur in `apply`, weil sich ein Tick nicht ablehnen lässt. Jede echte Änderung in `tick` kostet den Server eine Schreibtransaktion: Schreib Siege und Zähler am Ende der Partie einmal, nicht in jedem Tick.
+- Fehlt ein Item inzwischen, weil eine andere Partie desselben Spielers es verbraucht hat, lehnt die Plattform den Zug ab, und nichts ändert sich. Das Spiel muss dafür nichts tun.
+- Gäste haben ein leeres Profil, das nach der Partie verfällt; das Spiel muss Gäste nicht kennen.
+- **Typen:** `import manifest from "../manifest.json"` und `CatalogOf<typeof manifest>` als vierter Typparameter von `defineGame` (so wie `Ids` in `src/game.ts`). Dann ist ein Tippfehler in einer ID ein Typfehler.
+- **Tests:** `createMatch` und `stepMatch` bekommen `catalog: manifest` und die Profile je Sitz; die Änderungen eines Schritts stehen in `outcome.changes`. Beispiel in `test/rules.test.ts`.
+- **Oberfläche:** Sie bekommt das eigene Profil mit jedem Stand als `update.profile`, nie das der Mitspieler. Den Typ gibt man `connect` als vierten Typparameter.
+- **In `dev`** hat jeder Sitz unten ein aufklappbares Profil, das du bearbeiten kannst, etwa um einem Sitz zehn Siege zu geben. Es liegt in `.gamehearth/dev-profiles.json` (steht in `.gitignore`) und bleibt über Partien und Neustarts; wer die Datei direkt ändert, startet danach eine neue Partie. „Gast“ an einem Sitz lässt ihn mit einem leeren Profil spielen, das nach der Partie verfällt.
 
 ### Was die Plattform selbst macht
 
