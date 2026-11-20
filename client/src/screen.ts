@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { createTimeline, type ScreenConnection, type Timeline } from "@gamehearth/sdk/client";
-import { blobCells, gridHeight, gridWidth, type FarbfelderState } from "../../src/index";
+import { blobCells, type FarbfelderState, type Public } from "../../src/index";
 import {
   blendFigures,
   clock,
@@ -87,10 +87,10 @@ export class FieldScene extends Phaser.Scene {
     const players = this.#game.current.players;
     const seats = frame.to.players;
     const view = frame.to.public;
-    const layout = screenLayout(width, height, u);
+    const layout = screenLayout(width, height, u, view);
     const { field } = layout;
 
-    this.#drawCells(view.grid, layout, `${width}x${height}`);
+    this.#drawCells(view, layout, `${width}x${height}:${view.width}x${view.height}`);
 
     const g = this.#figures;
     g.clear();
@@ -101,7 +101,7 @@ export class FieldScene extends Phaser.Scene {
         continue;
       }
       g.fillStyle(0xffffff, 0.55 * strength);
-      for (const cell of blobCells({ x: figure.blobX, y: figure.blobY })) {
+      for (const cell of blobCells({ x: figure.blobX, y: figure.blobY }, view)) {
         g.fillRect(field.left + cell.x * field.scale, field.top + cell.y * field.scale, field.scale, field.scale);
       }
     }
@@ -131,7 +131,7 @@ export class FieldScene extends Phaser.Scene {
     this.#title.setPosition(field.left, layout.headerTop + layout.headerHeight / 2 + 4 * u);
     this.#recolor(this.#clock, hurry(view.ticksLeft) && frame.to.result === undefined ? colors.hurry : colors.text)
       .setText(clock(view.ticksLeft))
-      .setPosition(field.left + (gridWidth * field.scale) / 2, layout.headerTop + layout.headerHeight / 2 + 4 * u);
+      .setPosition(field.left + (view.width * field.scale) / 2, layout.headerTop + layout.headerHeight / 2 + 4 * u);
 
     const standings = ranking(view, seats, players);
     const { board } = layout;
@@ -163,8 +163,8 @@ export class FieldScene extends Phaser.Scene {
       this.#resultList.setText("");
       return;
     }
-    const fieldWidth = gridWidth * field.scale;
-    const fieldHeight = gridHeight * field.scale;
+    const fieldWidth = view.width * field.scale;
+    const fieldHeight = view.height * field.scale;
     const centerX = field.left + fieldWidth / 2;
     const splitY = field.top + fieldHeight * 0.36;
     o.fillStyle(colors.shade, 0.75);
@@ -177,7 +177,8 @@ export class FieldScene extends Phaser.Scene {
       .setPosition(centerX, splitY + field.scale * 0.8);
   }
 
-  #drawCells(grid: string, layout: ScreenLayout, size: string): void {
+  #drawCells(view: Public, layout: ScreenLayout, size: string): void {
+    const grid = view.grid;
     if (grid === this.#drawnGrid && size === this.#drawnSize) {
       return;
     }
@@ -188,10 +189,10 @@ export class FieldScene extends Phaser.Scene {
     const gap = Math.max(1, field.scale * 0.06);
     g.clear();
     g.fillStyle(colors.gap, 1);
-    g.fillRect(field.left - gap, field.top - gap, gridWidth * field.scale + gap, gridHeight * field.scale + gap);
-    for (let y = 0; y < gridHeight; y++) {
-      for (let x = 0; x < gridWidth; x++) {
-        const mark = grid[y * gridWidth + x] ?? "0";
+    g.fillRect(field.left - gap, field.top - gap, view.width * field.scale + gap, view.height * field.scale + gap);
+    for (let y = 0; y < view.height; y++) {
+      for (let x = 0; x < view.width; x++) {
+        const mark = grid[y * view.width + x] ?? "0";
         g.fillStyle(markColor(mark) ?? colors.empty, 1);
         g.fillRect(field.left + x * field.scale, field.top + y * field.scale, field.scale - gap, field.scale - gap);
       }

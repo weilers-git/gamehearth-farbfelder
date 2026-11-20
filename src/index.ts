@@ -9,6 +9,7 @@ export {
   emptyCell,
   farbfelder as default,
   farbfelder,
+  fieldSizes,
   gridHeight,
   gridWidth,
   insideGrid,
@@ -16,5 +17,6 @@ export {
   roundTicks,
   startCell,
   stepsPerCell,
+  ticksPerSecond,
 } from "./game";
-export type { Direction, FarbfelderAction, FarbfelderState, Figure, Point, Public } from "./game";
+export type { Direction, FarbfelderAction, FarbfelderState, FieldSize, Figure, Options, Point, Public, Size } from "./game";

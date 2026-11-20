@@ -7,7 +7,7 @@ Dieses Repo ist ein Echtzeit-Spiel für **Gamehearth**, eine selbst gehostete Sp
 Die Person kann vermutlich nicht programmieren. Sie kennt ihr Spiel, nicht den Code.
 
 - Sprich über Spielregeln, nicht über Code. Frag nach, was passieren soll („Was passiert, wenn zwei gleichzeitig auf dasselbe Feld laufen?“), nicht wie es gebaut wird.
-- Kläre die Regeln vollständig, bevor du sie baust: Spielerzahl, was man am Handy drücken kann, was auf dem Fernseher zu sehen ist, wie lange eine Runde dauert, wer gewinnt, was bei Gleichstand gilt. Schreib die Regeln in Alltagssprache in die `README.md` und lass sie bestätigen.
+- Kläre die Regeln vollständig, bevor du sie baust: Spielerzahl, was man am Handy drücken kann, was auf dem Fernseher zu sehen ist, wie lange eine Runde dauert, wer gewinnt, was bei Gleichstand gilt. Frag auch nach Varianten, die man vor der Partie einstellen möchte (Spielzeit, Feldgröße); sie werden Optionen. Schreib die Regeln in Alltagssprache in die `README.md` und lass sie bestätigen.
 - Arbeite in kleinen Schritten und zeig nach jedem Schritt etwas zum Ausprobieren (`npm run dev`, siehe unten). Sag in einem Satz, was sich geändert hat und was die Person ausprobieren soll.
 - Fachwörter nur mit Erklärung. Fehlermeldungen übersetzt du in einen Satz, was nicht stimmt und was du dagegen tust.
 - Vor dem ersten Veröffentlichen fragst du nach Lizenz und Namen (siehe „Veröffentlichen“).
@@ -16,7 +16,7 @@ Die Person kann vermutlich nicht programmieren. Sie kennt ihr Spiel, nicht den C
 
 | Pfad | Inhalt |
 |---|---|
-| `manifest.json` | Name, Version, Spielerzahl, Rollen (Fernseher und Controller), Lizenz des Spiels |
+| `manifest.json` | Name, Version, Spielerzahl, Rollen (Fernseher und Controller), Lizenz und Optionen des Spiels |
 | `src/game.ts` | die Spielregeln (Reducer mit `tick`), laufen auf dem Server |
 | `src/index.ts` | exportiert das Spiel als `default` |
 | `client/src/main.ts` | verbindet die Oberfläche mit der Plattform und startet je nach Rolle Fernseher oder Controller |
@@ -26,7 +26,7 @@ Die Person kann vermutlich nicht programmieren. Sie kennt ihr Spiel, nicht den C
 | `test/` | Tests für Regeln und Oberflächenlogik (Vitest) |
 | `dist/client/` | die gebaute Oberfläche (entsteht durch `npm run build`, nicht von Hand ändern) |
 
-Die Vorlage enthält ein kleines Beispielspiel, **Fangen**: Einer ist Fänger; wen er berührt, der wird Fänger. Nach 60 Sekunden gewinnt, wer am kürzesten Fänger war. Es zeigt die wichtigsten Muster. Ersetze es vollständig durch das Spiel der Person (siehe „Das Beispiel ersetzen“).
+Die Vorlage enthält ein kleines Beispielspiel, **Fangen**: Einer ist Fänger; wen er berührt, der wird Fänger. Ist die Spielzeit um (Option „Spielzeit“, Standard 60 Sekunden), gewinnt, wer am kürzesten Fänger war. Es zeigt die wichtigsten Muster. Ersetze es vollständig durch das Spiel der Person (siehe „Das Beispiel ersetzen“).
 
 ## Befehle
 
@@ -68,10 +68,10 @@ Vor jeder Übergabe an die Person müssen `npm test`, `npm run typecheck` und `n
 Die Spielregeln sind ein **Reducer**: fünf reine Funktionen in `defineGame` aus `@gamehearth/sdk`.
 
 ```ts
-setup({ players, random })            // Startzustand; players = ["p1", "p2", …]
-legalMoves(state, player)             // alle Eingaben, die dieser Sitz gerade machen darf (Array, leer = keine)
-apply(state, action, { player, players, random, now })  // eine Eingabe anwenden; state direkt ändern ist erlaubt
-tick(state, dt, { players, random, now })  // die Welt einen Schritt weiterrechnen, 20-mal pro Sekunde, dt ist immer 50
+setup({ players, random, options })   // Startzustand; players = ["p1", "p2", …]
+legalMoves(state, player, { players, options })  // alle Eingaben, die dieser Sitz gerade machen darf (Array, leer = keine)
+apply(state, action, { player, players, random, options, now })  // eine Eingabe anwenden; state direkt ändern ist erlaubt
+tick(state, dt, { players, random, options, now })  // die Welt einen Schritt weiterrechnen, 20-mal pro Sekunde, dt ist immer 50
 result(state)                         // undefined, solange es läuft; sonst { winners: ["p2"] }
 ```
 
@@ -82,7 +82,7 @@ So läuft ein Tick: Alle Eingaben, die seit dem letzten Tick angekommen sind, ge
 3. **Jede Partie muss enden**, meist über ein Zeitlimit. `check` spielt mit Bots, die zufällig drücken; endet eine Partie nach 10 Minuten Spielzeit nicht, ist das ein Fehler.
 4. **Ganze Zahlen für Positionen und Tempo.** Das Beispiel rechnet in Feldeinheiten mit ganzzahligem Tempo. `Math.sin`, `Math.cos`, `Math.exp`, `Math.pow`, `Math.hypot` und ähnliche rechnen auf dem Server (QuickJS) in den letzten Stellen manchmal anders als in Node; Grundrechenarten und `Math.sqrt` sind überall gleich. Abstände vergleichst du am einfachsten quadriert (`dx * dx + dy * dy <= r * r`), wie `touching` im Beispiel.
 5. **Der Zustand bleibt klein.** Er wird 20-mal pro Sekunde geprüft, kopiert und an alle Geräte geschickt. Ein Raster lieber als Text oder Zahlenliste als als Tausende Objekte. `check` warnt, wenn ein Tick auf dem Server zu lange braucht.
-6. **Kein `Math.random()`, kein `Date.now()`, kein `new Date()`.** Zufall nur über `random` (`random.int(1, 6)`, `random.pick(liste)`, `random.shuffle(liste)` gibt eine gemischte Kopie zurück), Zeit nur über `ctx.now` und das Zählen von Ticks. Jede Partie muss sich aus Seed und Eingaben exakt wiederholen lassen.
+6. **Kein `Math.random()`, kein `Date.now()`, kein `new Date()`.** Zufall nur über `random` (`random.int(1, 6)`, `random.pick(liste)`, `random.shuffle(liste)` gibt eine gemischte Kopie zurück, `random.weighted(tabelle)` zieht einen Eintrag nach seinem ganzzahligen `weight`), Zeit nur über `ctx.now` und das Zählen von Ticks. Jede Partie muss sich aus Seed und Eingaben exakt wiederholen lassen.
 7. **Der Zustand ist reines JSON** mit genau drei Bereichen: `public` (sehen alle, auch der Fernseher), `players` (ein Eintrag pro Sitz, sieht nur dieses Handy), `secret` (sieht niemand). Kein `Set`, keine `Map`, kein `Date`, keine Klassen, kein `undefined` in Arrays.
 8. **Der Fernseher sieht nur `public`.** Was auf dem Feld erscheinen soll, gehört nach `public`. Was nur ein Handy zeigen soll (etwa eine geheime Aufgabe), gehört nach `players[sitz]`.
 9. **Eingaben verraten nichts.** Alles, was in `legalMoves` steht, geht an das Handy dieses Spielers.
@@ -92,6 +92,17 @@ So läuft ein Tick: Alle Eingaben, die seit dem letzten Tick angekommen sind, ge
 13. **Keine Variablen außerhalb der Funktionen, die sich ändern.** Auf dem Server laufen viele Partien im selben Modul.
 14. **Nur die Sprache selbst.** Die Regeln laufen auf dem Server in QuickJS: kein `console`, kein `structuredClone`, kein `Intl`, kein Netz, keine Dateien. Importieren darfst du nur Dateien aus diesem Ordner und `@gamehearth/sdk`.
 15. **`setup` muss die Spielerzahl nicht prüfen.** Die Plattform startet nur mit einer Zahl aus `manifest.json`.
+
+### Optionen
+
+Varianten, die man vor der Partie einstellt, stehen in `manifest.json` unter `options`, wie „Spielzeit“ im Beispiel: entweder eine Auswahl aus festen Werten (`"type": "choice"` mit `choices`, Werte sind ganze Zahlen oder kurze Texte) oder Ja/Nein (`"type": "boolean"`), immer mit `label` und `default`. Der Gastgeber stellt sie in der Lobby ein. Namen bestehen aus Buchstaben und Ziffern, etwa `feldGroesse`.
+
+- Die Regeln lesen sie als `ctx.options` in `setup`, `legalMoves`, `apply` und `tick`, immer vollständig. Den Typ gibt man `defineGame` als dritten Typparameter, so wie `Options` in `src/game.ts`. Das Beispiel rechnet in `setup` die Spielzeit in Ticks um.
+- `result` bekommt keine Optionen; was das Ende braucht, steht im Zustand (im Beispiel `ticksLeft`).
+- Die Oberfläche bekommt sie mit jedem Stand als `update.options`.
+- `check` spielt jeden Wert jeder Option. Funde nennen die Optionen, der Befehl zum Nachspielen setzt sie mit `--option spielzeit=30`.
+- Tests geben `createMatch` die Optionen mit (`options: { spielzeit: 60 }`, siehe `test/rules.test.ts`); ohne sie ist `ctx.options` leer.
+- Eine Option fragt man nur, wenn die Person die Variante wirklich will. Braucht ein Spiel keine, fliegt `options` aus dem Manifest und `Options` aus den Regeln.
 
 ### Was die Plattform selbst macht
 
@@ -112,6 +123,7 @@ Darum kümmert sich das Spiel nicht: Vor dem Start und nach jeder Pause zählt d
 |---|---|
 | `Math.random() ist in Spielen nicht erlaubt` | `random` aus `setup` oder `ctx.random` in `apply` und `tick` benutzen |
 | `Partien enden nach … Sekunden Spielzeit … noch nicht` | ein Zeitlimit einbauen, das `tick` herunterzählt, und `result` darauf prüfen lassen |
+| Partie endet nur im eigenen Test sofort oder nie, `ctx.options.spielzeit` ist `undefined` | der Test ruft `createMatch` ohne `options` auf |
 | `mode "realtime", aber es hat keine Funktion tick` | `tick` in `defineGame` fehlt oder ist falsch geschrieben |
 | `tick hat einen Fehler geworfen: …` | Stelle und Tick stehen dabei; mit dem genannten `--seed` nachspielen |
 | Warnung: Ein Tick braucht auf dem Server lange | weniger Objekte im Zustand, nichts in jedem Tick neu aufbauen, was sich nicht ändert |
@@ -121,14 +133,15 @@ Darum kümmert sich das Spiel nicht: Vor dem Start und nach jeder Pause zählt d
 | `liegt außerhalb des Spielordners` | nur Dateien aus diesem Ordner und `@gamehearth/sdk` importieren |
 | Typfehler `Type 'string' is not assignable to type '"steer"'` | eine Eingabe als Objekt-Literal ohne Typ; `const action: MeineEingabe = { type: "steer", … }` schreiben |
 | Oberfläche bleibt leer, `dev` zeigt einen Fehler aus dem iframe | Fehlermeldung samt Datei und Zeile in der Ausgabe von `dev` lesen |
+| In der Konsole des Browsers: `Unrecognized Content-Security-Policy directive 'webrtc'` | harmlos: Die Abschottung der Plattform verbietet WebRTC auch für Browser, die die Regel kennen; Chromium kennt sie noch nicht |
 
-Jeder Fund von `check` nennt einen Befehl, mit dem sich genau diese Partie nachspielen lässt (`npx gamehearth check . --players 3 --seed check-3-17`). Damit siehst du alle Eingaben einzeln mit ihrem Tick.
+Jeder Fund von `check` nennt einen Befehl, mit dem sich genau diese Partie nachspielen lässt (`npx gamehearth check . --players 3 --seed check-3-17`, bei geänderten Optionen mit `--option`). Damit siehst du alle Eingaben einzeln mit ihrem Tick.
 
 ## Das Beispiel ersetzen
 
 Wenn das eigene Spiel steht, darf vom Fangen nichts übrig bleiben:
 
-- `manifest.json`: `name`, `description`, `players`, `roles` passend setzen. `mode` bleibt `"realtime"`. Die `id` kommt aus dem Ordnernamen. Passt sie nicht (etwa `mein-spiel`), änder sie jetzt in `manifest.json` und `package.json`: nur Kleinbuchstaben, Ziffern und Bindestriche. Nach dem ersten Veröffentlichen ändert sie sich nie mehr.
+- `manifest.json`: `name`, `description`, `players`, `roles` und `options` passend setzen (ohne Varianten fällt `options` weg). `mode` bleibt `"realtime"`. Die `id` kommt aus dem Ordnernamen. Passt sie nicht (etwa `mein-spiel`), änder sie jetzt in `manifest.json` und `package.json`: nur Kleinbuchstaben, Ziffern und Bindestriche. Nach dem ersten Veröffentlichen ändert sie sich nie mehr.
 - `package.json`: `description`.
 - `src/`, `client/src/`, `test/`: Regeln, Oberfläche und Tests des eigenen Spiels. Die Dateinamen darfst du behalten oder ändern, nur `src/index.ts` muss das Spiel als `default` exportieren.
 - `client/index.html`: Titel.

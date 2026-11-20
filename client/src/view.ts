@@ -10,6 +10,7 @@ import {
   type Figure,
   type Point,
   type Public,
+  type Size,
 } from "../../src/index";
 
 export type Snapshot = PlayerSnapshot<Public, Record<string, never>, FarbfelderAction>;
@@ -82,15 +83,15 @@ export interface ScreenLayout {
   board: { left: number; top: number; width: number; rowHeight: number };
 }
 
-export function screenLayout(width: number, height: number, u: number): ScreenLayout {
+export function screenLayout(width: number, height: number, u: number, grid: Size = { width: gridWidth, height: gridHeight }): ScreenLayout {
   const headerHeight = 64 * u;
   const margin = 16 * u;
   const boardWidth = Math.min(Math.max(width * 0.2, 200 * u), 320 * u);
-  const fitted = fitField(gridWidth, gridHeight, width - boardWidth, height - headerHeight, margin);
-  const slack = Math.max(0, height - headerHeight - 2 * margin - gridHeight * fitted.scale);
+  const fitted = fitField(grid.width, grid.height, width - boardWidth, height - headerHeight, margin);
+  const slack = Math.max(0, height - headerHeight - 2 * margin - grid.height * fitted.scale);
   const headerTop = slack / 2;
   const field = { scale: fitted.scale, left: fitted.left, top: headerTop + headerHeight + margin };
-  const rowHeight = Math.min(48 * u, Math.max(24 * u, (gridHeight * field.scale) / 9));
+  const rowHeight = Math.min(48 * u, Math.max(24 * u, (grid.height * field.scale) / 9));
   return { headerTop, headerHeight, field, board: { left: width - boardWidth, top: field.top, width: boardWidth - margin, rowHeight } };
 }
 

@@ -5,21 +5,24 @@ import farbfelder, {
   cellIndex,
   countCells,
   emptyCell,
+  fieldSizes,
   gridHeight,
   gridWidth,
   roundTicks,
   startCell,
   stepsPerCell,
+  ticksPerSecond,
   type Direction,
   type FarbfelderAction,
   type FarbfelderState,
+  type Options,
 } from "../src/index";
 
 type FarbMatch = Match<FarbfelderState, FarbfelderAction>;
 type Input = { player: string; action: FarbfelderAction };
 
-function start(players = 2, seed = "farbfelder"): FarbMatch {
-  const created = createMatch(farbfelder, { playerCount: players, seed });
+function start(players = 2, seed = "farbfelder", options: Options = { spielzeit: 90, feld: "mittel" }): FarbMatch {
+  const created = createMatch(farbfelder, { playerCount: players, seed, options });
   if (!created.ok) {
     throw new Error(created.error.message);
   }
@@ -97,6 +100,36 @@ describe("Farbfelder: Aufstellung", () => {
       expect(view.figures[player]!.blobWait).toBe(0);
     });
     expect(countCells(view.grid, players)).toEqual(new Array(players).fill(1));
+  });
+
+  it.each([
+    ["klein", 24, 14],
+    ["mittel", 32, 18],
+    ["gross", 40, 22],
+  ] as const)("baut bei Feldgröße %s ein Feld mit %i × %i Kästchen und stellt alle darauf auf", (feld, width, height) => {
+    const match = start(8, `feld-${feld}`, { spielzeit: 90, feld });
+    const view = match.state.public;
+    expect(fieldSizes[feld]).toEqual({ width, height });
+    expect([view.width, view.height]).toEqual([width, height]);
+    expect(view.grid).toHaveLength(width * height);
+    const starts = match.players.map((_, index) => startCell(index, 8, fieldSizes[feld]));
+    expect(new Set(starts.map((point) => `${point.x},${point.y}`)).size).toBe(8);
+    match.players.forEach((player, index) => {
+      expect(cell(match, player)).toEqual(starts[index]);
+      expect(view.grid[cellIndex(starts[index]!.x, starts[index]!.y, view)]).toBe(String(index + 1));
+    });
+  });
+
+  it.each([60, 90, 120] as const)("nimmt %i Sekunden Spielzeit aus der Option", (spielzeit) => {
+    expect(start(2, "zeit", { spielzeit, feld: "mittel" }).state.public.ticksLeft).toBe(spielzeit * ticksPerSecond);
+  });
+
+  it("hält Figuren auf einem kleinen Feld am Rand an", () => {
+    let match = start(2, "rand", { spielzeit: 60, feld: "klein" });
+    match = step(match, [steer("p1", "right")], 200);
+    expect(cell(match, "p1").x).toBe(23);
+    match = step(match, [steer("p1", "down")], 200);
+    expect(cell(match, "p1").y).toBe(13);
   });
 
   it("bietet jedem das Steuerkreuz und den Klecks an", () => {

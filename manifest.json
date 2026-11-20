@@ -1,10 +1,10 @@
 {
   "id": "farbfelder",
   "name": "Farbfelder",
-  "version": "0.1.0",
-  "description": "Lauf mit dem Handy übers Feld, färb Kästchen in deiner Farbe und kleckse; nach 90 Sekunden gewinnt, wer die meisten hat",
+  "version": "0.2.0",
+  "description": "Lauf mit dem Handy übers Feld, färb Kästchen in deiner Farbe und kleckse; ist die Zeit um, gewinnt, wer die meisten hat",
   "repository": "https://github.com/weilers-git/gamehearth-farbfelder",
-  "sdk": "^0.1.1",
+  "sdk": "^0.1.3",
   "license": {
     "code": "MIT",
     "assets": "CC0-1.0"
@@ -27,6 +27,46 @@
         "keyboard"
       ],
       "screen": "small"
+    }
+  },
+  "options": {
+    "spielzeit": {
+      "label": "Spielzeit",
+      "type": "choice",
+      "default": 90,
+      "choices": [
+        {
+          "value": 60,
+          "label": "1 Minute"
+        },
+        {
+          "value": 90,
+          "label": "1,5 Minuten"
+        },
+        {
+          "value": 120,
+          "label": "2 Minuten"
+        }
+      ]
+    },
+    "feld": {
+      "label": "Feldgröße",
+      "type": "choice",
+      "default": "mittel",
+      "choices": [
+        {
+          "value": "klein",
+          "label": "Klein"
+        },
+        {
+          "value": "mittel",
+          "label": "Mittel"
+        },
+        {
+          "value": "gross",
+          "label": "Groß"
+        }
+      ]
     }
   }
 }

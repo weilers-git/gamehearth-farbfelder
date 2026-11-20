@@ -1,6 +1,6 @@
 {
   "name": "farbfelder",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Farbfelder: Partyspiel für Gamehearth, in dem alle mit dem Handy Kästchen in ihrer Farbe einfärben",
   "license": "MIT",
@@ -18,12 +18,12 @@
     "pack": "npm run build && gamehearth pack ."
   },
   "dependencies": {
-    "@gamehearth/sdk": "file:vendor/gamehearth-sdk-0.1.1.tgz",
+    "@gamehearth/sdk": "file:vendor/gamehearth-sdk-0.1.3.tgz",
     "phaser": "4.2.1"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
-    "gamehearth": "file:vendor/gamehearth-0.3.0.tgz",
+    "gamehearth": "file:vendor/gamehearth-0.5.0.tgz",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.1.0"

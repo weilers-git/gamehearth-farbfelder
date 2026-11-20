@@ -46,6 +46,8 @@ function grid(p1: number, p2: number, p3: number): string {
 function view(changes: Partial<Public> = {}): Public {
   return {
     grid: grid(5, 9, 5),
+    width: gridWidth,
+    height: gridHeight,
     figures: { p1: figure(2, 2), p2: figure(10, 5), p3: figure(20, 8) },
     ticksLeft: 1800,
     ...changes,
@@ -81,6 +83,17 @@ describe("Oberfläche von Farbfelder: Fernseher", () => {
     expect(board.left + board.width).toBeLessThanOrEqual(1920);
     expect(board.rowHeight * 8).toBeLessThanOrEqual(gridHeight * field.scale);
     expect(field.scale).toBeGreaterThan(40);
+  });
+
+  it.each([
+    [24, 14],
+    [40, 22],
+  ])("passt auch ein Feld mit %i × %i Kästchen samt Rangliste auf den Fernseher", (width, height) => {
+    const layout = screenLayout(1920, 1080, 1, { width, height });
+    const { field, board } = layout;
+    expect(field.left + width * field.scale).toBeLessThanOrEqual(board.left);
+    expect(field.top + height * field.scale).toBeLessThanOrEqual(1080);
+    expect(board.rowHeight * 8).toBeLessThanOrEqual(height * field.scale);
   });
 
   it("hält Kopfzeile und Feld auch auf hohen Bildschirmen beisammen und zentriert beide", () => {

@@ -8,21 +8,28 @@ Auf einen Gamehearth-Server kommt das Spiel über einen Katalog, etwa den [Gameh
 
 ## Regeln
 
-Für 2 bis 8 Spieler. Eine Runde dauert 90 Sekunden.
+Für 2 bis 8 Spieler. Eine Runde dauert 90 Sekunden (einstellbar, siehe „Optionen“).
 
-- Das Spielfeld ist ein Raster aus 32 × 18 Kästchen. Jeder hat eine eigene Farbe und eine Figur auf dem Feld.
+- Das Spielfeld ist ein Raster aus Kästchen, normal 32 × 18. Jeder hat eine eigene Farbe und eine Figur auf dem Feld.
 - Am Handy gibt es ein Steuerkreuz (hoch, runter, links, rechts). Solange man drückt, läuft die Figur in diese Richtung.
 - Jedes Kästchen, über das die Figur läuft, bekommt ihre Farbe, auch wenn es vorher jemand anderem gehörte.
 - Am Handy gibt es außerdem den Knopf **Klecks**: Er färbt auf einen Schlag die 3 × 3 Kästchen rund um die Figur. Danach muss man 8 Sekunden warten, bis man wieder klecksen kann. Das Handy zeigt, wie lange es noch dauert.
-- Nach 90 Sekunden gewinnt, wer die meisten Kästchen hat. Bei Gleichstand gewinnen alle mit den meisten.
+- Ist die Zeit um, gewinnt, wer die meisten Kästchen hat. Bei Gleichstand gewinnen alle mit den meisten.
 - Auf dem Fernseher sieht man das Feld mit allen Figuren und ihren Namen, die Restzeit und rechts eine Rangliste, wie viele Kästchen jeder hat.
 - Auf dem Handy sieht man seinen Namen, seine Farbe, wie viele Kästchen man hat, das Steuerkreuz und den Klecks-Knopf.
 - Es gibt keinen Ton.
 
+### Optionen
+
+Der Gastgeber stellt sie in der Lobby ein:
+
+- **Spielzeit:** 1 Minute, 1,5 Minuten (Standard) oder 2 Minuten.
+- **Feldgröße:** Klein (24 × 14 Kästchen), Mittel (32 × 18, Standard) oder Groß (40 × 22).
+
 ### Einzelheiten
 
-- **Feldgröße:** immer 32 × 18 Kästchen (passt ins Fernsehformat), egal wie viele mitspielen.
-- **Tempo:** Eine Figur braucht für ein Kästchen 0,15 Sekunden, schafft also gut 6 Kästchen pro Sekunde. Einmal quer übers Feld dauert etwa 5 Sekunden.
+- **Feldgröße:** wie in der Lobby gewählt, egal wie viele mitspielen; alle Größen passen ins Fernsehformat.
+- **Tempo:** Eine Figur braucht für ein Kästchen 0,15 Sekunden, schafft also gut 6 Kästchen pro Sekunde. Einmal quer übers mittlere Feld dauert etwa 5 Sekunden.
 - **Laufen in ganzen Kästchen:** Figuren stehen immer auf einem Kästchen. Kurz antippen heißt: genau ein Kästchen weiter. Lässt man los, läuft die Figur noch bis zum nächsten Kästchen und bleibt dort stehen. Drückt man während eines Schritts schon die nächste Richtung, biegt die Figur auf dem nächsten Kästchen ab. Umkehren geht sofort.
 - **Steuerkreuz am Handy:** Man kann den Daumen auf dem Steuerkreuz von einer Richtung zur nächsten ziehen, ohne loszulassen. Hält man das Handy quer, liegt das Steuerkreuz links und der Klecks-Knopf groß rechts, wie bei einem Gamepad. Mit Tastatur gehen die Pfeiltasten oder W, A, S, D, der Klecks mit der Leertaste oder K. Hält man eine zweite Richtung kurz dazu und lässt sie los, läuft die Figur in die erste weiter. Hat ein Knopf des Steuerkreuzes den Fokus, drückt Enter diese Richtung; die Leertaste bleibt auch dort der Klecks.
 - **Start:** Die Figuren stehen gleichmäßig verteilt; das Startkästchen hat schon die eigene Farbe, also beginnt jeder mit 1 Kästchen. Vor dem Start zählt Gamehearth selbst 3 Sekunden herunter.

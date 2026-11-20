@@ -1,9 +1,20 @@
 import { defineGame, type GameState, type PlayerId } from "@gamehearth/sdk";
 
-export const gridWidth = 32;
-export const gridHeight = 18;
+export const fieldSizes = {
+  klein: { width: 24, height: 14 },
+  mittel: { width: 32, height: 18 },
+  gross: { width: 40, height: 22 },
+} as const;
+export type FieldSize = keyof typeof fieldSizes;
+export interface Size {
+  width: number;
+  height: number;
+}
+export const gridWidth = fieldSizes.mittel.width;
+export const gridHeight = fieldSizes.mittel.height;
 export const stepsPerCell = 3;
-export const roundTicks = 90 * 20;
+export const ticksPerSecond = 20;
+export const roundTicks = 90 * ticksPerSecond;
 export const blobCooldownTicks = 8 * 20;
 export const blobRadius = 1;
 export const emptyCell = "0";
@@ -29,8 +40,15 @@ export interface Figure {
 
 export interface Public {
   grid: string;
+  width: number;
+  height: number;
   figures: Record<PlayerId, Figure>;
   ticksLeft: number;
+}
+
+export interface Options {
+  spielzeit: 60 | 90 | 120;
+  feld: FieldSize;
 }
 
 export type FarbfelderState = GameState<Public, Record<string, never>, Record<string, never>>;
@@ -51,27 +69,27 @@ export function cellOf(units: number): number {
   return Math.floor((units + Math.floor(stepsPerCell / 2)) / stepsPerCell);
 }
 
-export function cellIndex(x: number, y: number): number {
-  return y * gridWidth + x;
+export function cellIndex(x: number, y: number, size: Size = fieldSizes.mittel): number {
+  return y * size.width + x;
 }
 
-export function insideGrid(x: number, y: number): boolean {
-  return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
+export function insideGrid(x: number, y: number, size: Size = fieldSizes.mittel): boolean {
+  return x >= 0 && x < size.width && y >= 0 && y < size.height;
 }
 
 export function ownerMark(seatIndex: number): string {
   return String(seatIndex + 1);
 }
 
-export function startCell(index: number, count: number): Point {
+export function startCell(index: number, count: number, size: Size = fieldSizes.mittel): Point {
   const rows = count <= 4 ? 1 : 2;
   const firstRow = Math.ceil(count / rows);
   const row = index < firstRow ? 0 : 1;
   const inRow = row === 0 ? firstRow : count - firstRow;
   const column = row === 0 ? index : index - firstRow;
   return {
-    x: Math.floor(((column + 1) * gridWidth) / (inRow + 1)),
-    y: Math.floor(((row + 1) * gridHeight) / (rows + 1)),
+    x: Math.floor(((column + 1) * size.width) / (inRow + 1)),
+    y: Math.floor(((row + 1) * size.height) / (rows + 1)),
   };
 }
 
@@ -86,13 +104,13 @@ export function countCells(grid: string, seatCount: number): number[] {
   return counts;
 }
 
-export function blobCells(center: Point): Point[] {
+export function blobCells(center: Point, size: Size = fieldSizes.mittel): Point[] {
   const cells: Point[] = [];
   for (let dy = -blobRadius; dy <= blobRadius; dy++) {
     for (let dx = -blobRadius; dx <= blobRadius; dx++) {
       const x = center.x + dx;
       const y = center.y + dy;
-      if (insideGrid(x, y)) {
+      if (insideGrid(x, y, size)) {
         cells.push({ x, y });
       }
     }
@@ -115,12 +133,13 @@ function aligned(figure: Figure): boolean {
   return figure.x % stepsPerCell === 0 && figure.y % stepsPerCell === 0;
 }
 
-export const farbfelder = defineGame<FarbfelderState, FarbfelderAction>({
-  setup({ players }) {
+export const farbfelder = defineGame<FarbfelderState, FarbfelderAction, Options>({
+  setup({ players, options }) {
+    const size = fieldSizes[options.feld];
     const figures: Record<PlayerId, Figure> = {};
     const starts: { index: number; mark: string }[] = [];
     players.forEach((player, index) => {
-      const start = startCell(index, players.length);
+      const start = startCell(index, players.length, size);
       figures[player] = {
         x: start.x * stepsPerCell,
         y: start.y * stepsPerCell,
@@ -131,10 +150,16 @@ export const farbfelder = defineGame<FarbfelderState, FarbfelderAction>({
         blobX: start.x,
         blobY: start.y,
       };
-      starts.push({ index: cellIndex(start.x, start.y), mark: ownerMark(index) });
+      starts.push({ index: cellIndex(start.x, start.y, size), mark: ownerMark(index) });
     });
     return {
-      public: { grid: paint(emptyCell.repeat(gridWidth * gridHeight), starts), figures, ticksLeft: roundTicks },
+      public: {
+        grid: paint(emptyCell.repeat(size.width * size.height), starts),
+        width: size.width,
+        height: size.height,
+        figures,
+        ticksLeft: options.spielzeit * ticksPerSecond,
+      },
       players: Object.fromEntries(players.map((player) => [player, {}])),
       secret: {},
     };
@@ -162,9 +187,10 @@ export const farbfelder = defineGame<FarbfelderState, FarbfelderAction>({
     }
     const center = { x: cellOf(figure.x), y: cellOf(figure.y) };
     const mark = ownerMark(players.indexOf(player));
+    const size = state.public;
     state.public.grid = paint(
       state.public.grid,
-      blobCells(center).map((cell) => ({ index: cellIndex(cell.x, cell.y), mark })),
+      blobCells(center, size).map((cell) => ({ index: cellIndex(cell.x, cell.y, size), mark })),
     );
     figure.blobWait = blobCooldownTicks;
     figure.blobX = center.x;
@@ -187,15 +213,15 @@ export const farbfelder = defineGame<FarbfelderState, FarbfelderAction>({
         figure.next = "none";
         const step = steps[wish];
         const target = { x: figure.x / stepsPerCell + step.x, y: figure.y / stepsPerCell + step.y };
-        figure.heading = wish !== "none" && insideGrid(target.x, target.y) ? wish : "none";
+        figure.heading = wish !== "none" && insideGrid(target.x, target.y, view) ? wish : "none";
       }
       if (figure.heading === "none") {
         return;
       }
-      const before = cellIndex(cellOf(figure.x), cellOf(figure.y));
+      const before = cellIndex(cellOf(figure.x), cellOf(figure.y), view);
       figure.x += steps[figure.heading].x;
       figure.y += steps[figure.heading].y;
-      const after = cellIndex(cellOf(figure.x), cellOf(figure.y));
+      const after = cellIndex(cellOf(figure.x), cellOf(figure.y), view);
       if (after !== before) {
         const marks = painters[after] ?? [];
         marks.push(ownerMark(index));
